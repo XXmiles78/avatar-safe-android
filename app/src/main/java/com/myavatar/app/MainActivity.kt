@@ -110,8 +110,8 @@ private fun searchOnline(
     } ?: emptyList()
 
                 Handler(Looper.getMainLooper()).post {
-                    onResult(imageUrl)
-                }
+    onResult(imageUrls)
+}
             } else {
                 Handler(Looper.getMainLooper()).post {
                     onResult(emptyList())
@@ -184,7 +184,9 @@ fun MyAvatarApp() {
     var results by remember {
         mutableStateOf<List<OfflineAvatar>>(emptyList())
     }
-
+var onlineResults by remember {
+    mutableStateOf<List<String>>(emptyList())
+}
     var selectedAvatar by remember {
         mutableStateOf<OfflineAvatar?>(null)
     }
@@ -384,7 +386,7 @@ fun MyAvatarApp() {
             Button(
                 onClick = {
                     searchOnline(searchText) { urls ->
-    results = urls
+    onlineResults = urls
 }
                 },
                 modifier = Modifier

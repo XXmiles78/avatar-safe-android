@@ -720,14 +720,23 @@ private fun AvatarCard(
 private fun OnlineAvatarCard(
     imageUrl: String
 ) {
+    val context = LocalContext.current
+
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { },
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MyAvatarLightLilac
-        )
+    modifier = Modifier
+        .fillMaxWidth()
+        .clickable {
+            context.startActivity(
+                android.content.Intent(
+                    android.content.Intent.ACTION_VIEW,
+                    android.net.Uri.parse(imageUrl)
+                )
+            )
+        },
+    shape = RoundedCornerShape(20.dp),
+    colors = CardDefaults.cardColors(
+        containerColor = MyAvatarLightLilac
+    )
     ) {
         Column(
             modifier = Modifier

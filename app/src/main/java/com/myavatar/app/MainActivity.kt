@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -63,123 +64,89 @@ data class OfflineAvatar(
 private val offlineAvatars = listOf(
 
     OfflineAvatar(
-        name = "Gatto spaziale",
-        icon = "🐱",
-        keywords = listOf(
-            "gatto", "gatti", "spazio", "astronauta",
-            "stelle", "universo", "viola", "blu"
-        )
+        "Gatto spaziale", "🐱",
+        listOf("gatto", "gatti", "spazio", "astronauta", "stelle", "universo", "viola", "blu")
     ),
 
     OfflineAvatar(
-        name = "Volpe fantasy",
-        icon = "🦊",
-        keywords = listOf(
-            "volpe", "fantasy", "magia", "magico",
-            "foresta", "natura", "arancione"
-        )
+        "Volpe fantasy", "🦊",
+        listOf("volpe", "fantasy", "magia", "magico", "foresta", "natura", "arancione", "viola")
     ),
 
     OfflineAvatar(
-        name = "Panda kawaii",
-        icon = "🐼",
-        keywords = listOf(
-            "panda", "kawaii", "carino", "dolce",
-            "bianco", "nero", "tenero"
-        )
+        "Panda kawaii", "🐼",
+        listOf("panda", "kawaii", "carino", "dolce", "bianco", "nero", "tenero")
     ),
 
     OfflineAvatar(
-        name = "Unicorno",
-        icon = "🦄",
-        keywords = listOf(
-            "unicorno", "fantasy", "arcobaleno",
-            "magia", "rosa", "viola", "azzurro"
-        )
+        "Unicorno", "🦄",
+        listOf("unicorno", "fantasy", "arcobaleno", "magia", "rosa", "viola", "azzurro")
     ),
 
     OfflineAvatar(
-        name = "Robot futuristico",
-        icon = "🤖",
-        keywords = listOf(
-            "robot", "futuro", "futuristico", "tecnologia",
-            "spazio", "gaming", "blu", "metallo"
-        )
+        "Robot futuristico", "🤖",
+        listOf("robot", "futuro", "futuristico", "tecnologia", "spazio", "gaming", "blu", "metallo")
     ),
 
     OfflineAvatar(
-        name = "Esploratrice dello spazio",
-        icon = "🚀",
-        keywords = listOf(
-            "spazio", "astronauta", "esploratrice",
-            "stelle", "pianeta", "universo", "razzo"
-        )
+        "Esploratrice dello spazio", "🚀",
+        listOf("spazio", "astronauta", "esploratrice", "stelle", "pianeta", "universo", "razzo")
     ),
 
     OfflineAvatar(
-        name = "Cucciolo",
-        icon = "🐶",
-        keywords = listOf(
-            "cane", "cani", "cucciolo", "animale",
-            "carino", "dolce", "tenero"
-        )
+        "Cucciolo", "🐶",
+        listOf("cane", "cani", "cucciolo", "animale", "carino", "dolce", "tenero")
     ),
 
     OfflineAvatar(
-        name = "Volpe stellare",
-        icon = "🦊",
-        keywords = listOf(
-            "volpe", "stelle", "spazio",
-            "galassia", "viola", "blu"
-        )
+        "Volpe stellare", "🦊",
+        listOf("volpe", "stelle", "spazio", "galassia", "viola", "blu")
     ),
 
     OfflineAvatar(
-        name = "Gatto musicale",
-        icon = "🎧",
-        keywords = listOf(
-            "gatto", "musica", "cuffie",
-            "canzone", "music", "viola", "rosa"
-        )
+        "Gatto musicale", "🎧",
+        listOf("gatto", "musica", "cuffie", "canzone", "music", "viola", "rosa")
     ),
 
     OfflineAvatar(
-        name = "Avatar sportivo",
-        icon = "🏀",
-        keywords = listOf(
-            "sport", "basket", "calcio", "pallone",
-            "sportivo", "energia"
-        )
+        "Avatar sportivo", "🏀",
+        listOf("sport", "basket", "calcio", "pallone", "sportivo", "energia")
     ),
 
     OfflineAvatar(
-        name = "Avatar musicale",
-        icon = "🎵",
-        keywords = listOf(
-            "musica", "canzone", "cantante",
-            "note", "cuffie", "rosa", "viola"
-        )
+        "Avatar musicale", "🎵",
+        listOf("musica", "canzone", "cantante", "note", "cuffie", "rosa", "viola")
     ),
 
     OfflineAvatar(
-        name = "Natura incantata",
-        icon = "🌸",
-        keywords = listOf(
-            "natura", "fiori", "fiore", "foresta",
-            "giardino", "primavera", "rosa", "verde"
-        )
+        "Natura incantata", "🌸",
+        listOf("natura", "fiori", "fiore", "foresta", "giardino", "primavera", "rosa", "verde")
     )
 )
 
 @Composable
 fun MyAvatarApp() {
 
-    var searchText by remember {
-        mutableStateOf("")
-    }
+    var searchText by remember { mutableStateOf("") }
 
     var results by remember {
         mutableStateOf<List<OfflineAvatar>>(emptyList())
+    }
+
+    var selectedAvatar by remember {
+        mutableStateOf<OfflineAvatar?>(null)
+    }
+
+    if (selectedAvatar != null) {
+
+        AvatarDetail(
+            avatar = selectedAvatar!!,
+            onBack = {
+                selectedAvatar = null
+            }
+        )
+
+        return
     }
 
     Surface(
@@ -223,9 +190,7 @@ fun MyAvatarApp() {
                     Text("Cosa stai cercando?")
                 },
                 placeholder = {
-                    Text(
-                        "Es. un gatto viola nello spazio..."
-                    )
+                    Text("Es. un gatto viola nello spazio...")
                 }
             )
 
@@ -258,7 +223,7 @@ fun MyAvatarApp() {
             } else {
 
                 Text(
-                    text = "Risultati offline",
+                    text = "Avatar consigliati",
                     modifier = Modifier.fillMaxWidth(),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
@@ -269,13 +234,21 @@ fun MyAvatarApp() {
 
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
 
                     items(results) { avatar ->
-                        AvatarCard(avatar)
+
+                        AvatarCard(
+                            avatar = avatar,
+                            onClick = {
+                                selectedAvatar = avatar
+                            }
+                        )
                     }
                 }
             }
@@ -299,10 +272,10 @@ private fun searchOffline(
         }
 
     if (words.isEmpty()) {
-        return offlineAvatars.take(6)
+        return offlineAvatars.take(8)
     }
 
-    return offlineAvatars
+    val matches = offlineAvatars
         .map { avatar ->
 
             var score = 0
@@ -329,6 +302,14 @@ private fun searchOffline(
         .map {
             it.first
         }
+
+    // Se la frase è generica o non contiene parole conosciute,
+    // mostriamo comunque avatar consigliati.
+    return if (matches.isEmpty()) {
+        offlineAvatars.take(8)
+    } else {
+        matches
+    }
 }
 
 @Composable
@@ -366,16 +347,16 @@ private fun WelcomeSection() {
                 color = MyAvatarDark
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(18.dp)
             ) {
-                Text("🐱")
-                Text("🦊")
-                Text("🦄")
-                Text("🤖")
-                Text("🌸")
+                Text("🐱", fontSize = 28.sp)
+                Text("🦊", fontSize = 28.sp)
+                Text("🦄", fontSize = 28.sp)
+                Text("🤖", fontSize = 28.sp)
+                Text("🌸", fontSize = 28.sp)
             }
         }
     }
@@ -383,19 +364,19 @@ private fun WelcomeSection() {
     Spacer(modifier = Modifier.height(18.dp))
 
     Text(
-        text = "Esempi",
+        text = "Prova a scrivere, ad esempio:",
         fontWeight = FontWeight.Bold,
-        fontSize = 18.sp,
+        fontSize = 17.sp,
         color = MyAvatarDark
     )
 
     Spacer(modifier = Modifier.height(8.dp))
 
     Text(
-        text = "• un gatto nello spazio\n" +
-                "• una volpe magica viola\n" +
-                "• un panda carino\n" +
-                "• un avatar musicale",
+        text = "\"un gatto nello spazio\"\n" +
+                "\"una volpe magica viola\"\n" +
+                "\"un panda molto carino\"\n" +
+                "\"una bella foto per il mio profilo\"",
         textAlign = TextAlign.Center,
         color = MyAvatarDark
     )
@@ -403,11 +384,16 @@ private fun WelcomeSection() {
 
 @Composable
 private fun AvatarCard(
-    avatar: OfflineAvatar
+    avatar: OfflineAvatar,
+    onClick: () -> Unit
 ) {
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable {
+                onClick()
+            },
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = MyAvatarLightLilac
@@ -446,6 +432,120 @@ private fun AvatarCard(
                 color = MyAvatarDark,
                 textAlign = TextAlign.Center
             )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = "Tocca per vedere",
+                fontSize = 12.sp,
+                color = MyAvatarLilac
+            )
+        }
+    }
+}
+
+@Composable
+private fun AvatarDetail(
+    avatar: OfflineAvatar,
+    onBack: () -> Unit
+) {
+
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = Color.White
+    ) {
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Text(
+                text = "Anteprima",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = MyAvatarDark
+            )
+
+            Spacer(modifier = Modifier.height(30.dp))
+
+            Column(
+                modifier = Modifier
+                    .size(220.dp)
+                    .background(
+                        color = MyAvatarLightLilac,
+                        shape = CircleShape
+                    ),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+
+                Text(
+                    text = avatar.icon,
+                    fontSize = 110.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = avatar.name,
+                fontSize = 25.sp,
+                fontWeight = FontWeight.Bold,
+                color = MyAvatarDark
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text(
+                text = "Questo avatar è disponibile " +
+                        "nel catalogo offline di MyAvatar.",
+                textAlign = TextAlign.Center,
+                color = MyAvatarDark
+            )
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            Button(
+                onClick = {
+                    // Il salvataggio nei "Miei avatar"
+                    // verrà aggiunto nel prossimo blocco.
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(18.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MyAvatarLilac
+                )
+            ) {
+                Text(
+                    text = "⭐ Usa questo avatar",
+                    fontSize = 17.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Button(
+                onClick = onBack,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(18.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MyAvatarDark
+                )
+            ) {
+                Text(
+                    text = "← Torna ai risultati",
+                    fontSize = 17.sp
+                )
+            }
         }
     }
 }

@@ -75,7 +75,7 @@ private val MyAvatarLightLilac = Color(0xFFF4EFF9)
 private val MyAvatarDark = Color(0xFF30263A)
 private fun searchOnline(
     query: String,
-    onResult: (String?) -> Unit
+    onResult: (List<String>) -> Unit
 ) {
     Thread {
         try {
@@ -90,7 +90,7 @@ private fun searchOnline(
 
             val body = JSONObject().apply {
                 put("prompt", query)
-                put("num_images", 1)
+                put("num_images", 6)
             }.toString()
 
             connection.outputStream.use { output ->
@@ -104,14 +104,17 @@ private fun searchOnline(
                     connection.inputStream.bufferedReader().use { it.readText() }
 
                 val json = JSONObject(responseText)
-                val imageUrl = json.optString("image", null)
+                val imageUrls = json.optJSONArray("images")
+    ?.let { array ->
+        List(array.length()) { index -> array.getString(index) }
+    } ?: emptyList()
 
                 Handler(Looper.getMainLooper()).post {
                     onResult(imageUrl)
                 }
             } else {
                 Handler(Looper.getMainLooper()).post {
-                    onResult(null)
+                    onResult(emptyList())
                 }
             }
 
@@ -119,7 +122,7 @@ private fun searchOnline(
 
         } catch (e: Exception) {
             Handler(Looper.getMainLooper()).post {
-                onResult(null)
+                onResult(emptyList())
             }
         }
     }.start()
@@ -380,7 +383,9 @@ fun MyAvatarApp() {
 
             Button(
                 onClick = {
-                    results = searchOffline(searchText)
+                    searchOnline(searchText) { urls ->
+    results = urls
+}
                 },
                 modifier = Modifier
                     .fillMaxWidth()

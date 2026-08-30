@@ -59,6 +59,7 @@ import android.os.Looper
 import java.net.HttpURLConnection
 import java.net.URL
 import org.json.JSONObject
+import coil3.compose.AsyncImage
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -514,7 +515,7 @@ var onlineResults by remember {
                 }
             }
 
-            if (results.isEmpty()) {
+            if (results.isEmpty() && onlineResults.isEmpty()) {
 
                 WelcomeSection()
 
@@ -550,6 +551,13 @@ var onlineResults by remember {
                             }
                         )
                     }
+
+                                items(onlineResults) { imageUrl ->
+
+                OnlineAvatarCard(
+                    imageUrl = imageUrl
+                )
+            }
                 }
             }
         }
@@ -704,7 +712,53 @@ private fun AvatarCard(
         }
     }
 }
+@Composable
+private fun OnlineAvatarCard(
+    imageUrl: String
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { },
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MyAvatarLightLilac
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = "Avatar online",
+                modifier = Modifier
+                    .size(145.dp)
+                    .clip(CircleShape),
+                contentScale = ContentScale.Crop
+            )
 
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text(
+                text = "Avatar online",
+                fontWeight = FontWeight.Bold,
+                color = MyAvatarDark,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = "Tocca per vedere",
+                fontSize = 12.sp,
+                color = MyAvatarLilac
+            )
+        }
+    }
+}
 @Composable
 private fun AvatarDetail(
     avatar: OfflineAvatar,

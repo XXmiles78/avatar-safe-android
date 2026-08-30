@@ -54,7 +54,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import java.io.File
-
+import android.os.Handler
+import android.os.Looper
+import java.net.HttpURLConnection
+import java.net.URL
+import org.json.JSONObject
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -69,7 +73,57 @@ class MainActivity : ComponentActivity() {
 private val MyAvatarLilac = Color(0xFF9B7EBD)
 private val MyAvatarLightLilac = Color(0xFFF4EFF9)
 private val MyAvatarDark = Color(0xFF30263A)
+private fun searchOnline(
+    query: String,
+    onResult: (String?) -> Unit
+) {
+    Thread {
+        try {
+            val url = URL("https://myavatar-ai.xxmiles78.workers.dev/")
+            val connection = url.openConnection() as HttpURLConnection
 
+            connection.requestMethod = "POST"
+            connection.setRequestProperty("Content-Type", "application/json")
+            connection.doOutput = true
+            connection.connectTimeout = 15000
+            connection.readTimeout = 30000
+
+            val body = JSONObject().apply {
+                put("prompt", query)
+                put("num_images", 1)
+            }.toString()
+
+            connection.outputStream.use { output ->
+                output.write(body.toByteArray(Charsets.UTF_8))
+            }
+
+            val responseCode = connection.responseCode
+
+            if (responseCode in 200..299) {
+                val responseText =
+                    connection.inputStream.bufferedReader().use { it.readText() }
+
+                val json = JSONObject(responseText)
+                val imageUrl = json.optString("image", null)
+
+                Handler(Looper.getMainLooper()).post {
+                    onResult(imageUrl)
+                }
+            } else {
+                Handler(Looper.getMainLooper()).post {
+                    onResult(null)
+                }
+            }
+
+            connection.disconnect()
+
+        } catch (e: Exception) {
+            Handler(Looper.getMainLooper()).post {
+                onResult(null)
+            }
+        }
+    }.start()
+}
 data class OfflineAvatar(
     val name: String,
     val imageRes: Int,

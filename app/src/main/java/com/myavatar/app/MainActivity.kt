@@ -737,6 +737,9 @@ private fun OnlineAvatarCard(
         ) {
             AsyncImage(
                 model = imageUrl,
+    onError = { error ->
+        android.util.Log.e("ONLINE_AVATAR", "Errore immagine: ${error.result.throwable}")
+    },
                 contentDescription = "Avatar online",
                 modifier = Modifier
                     .size(145.dp)

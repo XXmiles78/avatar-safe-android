@@ -1,9 +1,15 @@
 package com.myavatar.app
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -29,6 +35,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,13 +44,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.res.painterResource
+import androidx.core.content.ContextCompat
+import java.io.File
 
 class MainActivity : ComponentActivity() {
 
@@ -71,61 +81,44 @@ private val offlineAvatars = listOf(
     OfflineAvatar(
         "Gatto spaziale",
         R.drawable.avatar_gatto_spaziale,
-        listOf(
-            "gatto", "gatti", "spazio", "astronauta",
-            "stelle", "universo", "viola", "blu"
-        )
+        listOf("gatto", "spazio", "astronauta", "stelle", "universo", "viola", "blu")
     ),
 
     OfflineAvatar(
         "Volpe fantasy",
         R.drawable.avatar_volpe_fantasy,
-        listOf(
-            "volpe", "fantasy", "magia", "magico",
-            "foresta", "natura", "arancione", "viola"
-        )
+        listOf("volpe", "fantasy", "magia", "magico", "foresta", "natura", "viola")
     ),
 
     OfflineAvatar(
         "Panda kawaii",
         R.drawable.avatar_panda_kawaii,
-        listOf(
-            "panda", "kawaii", "carino", "dolce",
-            "bianco", "nero", "tenero"
-        )
+        listOf("panda", "kawaii", "carino", "dolce", "tenero")
     ),
 
     OfflineAvatar(
         "Unicorno",
         R.drawable.avatar_unicorno,
-        listOf(
-            "unicorno", "fantasy", "arcobaleno",
-            "magia", "rosa", "viola", "azzurro"
-        )
+        listOf("unicorno", "fantasy", "arcobaleno", "magia", "rosa", "viola")
     ),
 
     OfflineAvatar(
         "Robot futuristico",
         R.drawable.avatar_robot_futuristico,
-        listOf(
-            "robot", "futuro", "futuristico",
-            "tecnologia", "spazio", "gaming",
-            "blu", "metallo"
-        )
+        listOf("robot", "futuro", "futuristico", "tecnologia", "spazio", "gaming")
     ),
 
     OfflineAvatar(
         "Esploratrice dello spazio",
         R.drawable.avatar_esploratrice_spazio,
-        listOf(
-            "spazio", "astronauta", "esploratrice",
-            "stelle", "pianeta", "universo", "razzo"
-        )
+        listOf("spazio", "astronauta", "esploratrice", "stelle", "pianeta", "universo")
     )
 )
 
 @Composable
 fun MyAvatarApp() {
+
+    val context = LocalContext.current
 
     var searchText by remember {
         mutableStateOf("")
@@ -143,8 +136,121 @@ fun MyAvatarApp() {
         mutableStateOf<OfflineAvatar?>(null)
     }
 
-    val context = LocalContext.current
+    var personalPhoto by remember {
+        mutableStateOf<Bitmap?>(null)
+    }
 
+    var showPhotoScreen by remember {
+        mutableStateOf(false)
+    }
+
+    /*
+     * Carica la foto personale salvata quando l'app viene aperta.
+     */
+    LaunchedEffect(Unit) {
+        personalPhoto = loadPersonalPhoto(context)
+    }
+
+    /*
+     * Fotocamera.
+     * TakePicturePreview non richiede FileProvider:
+     * Android restituisce direttamente una Bitmap.
+     */
+    val cameraLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.TakePicturePreview()
+        ) { bitmap ->
+
+            if (bitmap != null) {
+                savePersonalPhoto(context, bitmap)
+                personalPhoto = bitmap
+            }
+        }
+
+    /*
+     * Selezione di una foto già presente nel telefono.
+     */
+    val galleryLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.GetContent()
+        ) { uri ->
+
+            if (uri != null) {
+
+                try {
+
+                    val bitmap = context.contentResolver
+                        .openInputStream(uri)
+                        ?.use { input ->
+                            BitmapFactory.decodeStream(input)
+                        }
+
+                    if (bitmap != null) {
+                        savePersonalPhoto(context, bitmap)
+                        personalPhoto = bitmap
+                    }
+
+                } catch (_: Exception) {
+                    // Se la foto non può essere letta,
+                    // non modifichiamo quella già salvata.
+                }
+            }
+        }
+
+    /*
+     * Richiesta del permesso fotocamera.
+     */
+    val cameraPermissionLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { granted ->
+
+            if (granted) {
+                cameraLauncher.launch(null)
+            }
+        }
+
+    fun openCamera() {
+
+        val permissionGranted =
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED
+
+        if (permissionGranted) {
+            cameraLauncher.launch(null)
+        } else {
+            cameraPermissionLauncher.launch(
+                Manifest.permission.CAMERA
+            )
+        }
+    }
+
+    /*
+     * Schermata foto personale.
+     */
+    if (showPhotoScreen) {
+
+        PersonalPhotoScreen(
+            photo = personalPhoto,
+            onBack = {
+                showPhotoScreen = false
+            },
+            onCamera = {
+                openCamera()
+            },
+            onGallery = {
+                galleryLauncher.launch("image/*")
+            }
+        )
+
+        return
+    }
+
+    /*
+     * Schermata dettaglio avatar.
+     */
     if (selectedAvatar != null) {
 
         AvatarDetail(
@@ -153,7 +259,11 @@ fun MyAvatarApp() {
                 selectedAvatar = null
             },
             onUseAvatar = {
-                saveAvatar(context, selectedAvatar!!.name)
+                saveAvatar(
+                    context,
+                    selectedAvatar!!.name
+                )
+
                 savedAvatar = selectedAvatar
                 selectedAvatar = null
             }
@@ -170,7 +280,10 @@ fun MyAvatarApp() {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 20.dp, vertical = 24.dp),
+                .padding(
+                    horizontal = 20.dp,
+                    vertical = 24.dp
+                ),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
@@ -189,7 +302,7 @@ fun MyAvatarApp() {
                 color = MyAvatarLilac
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
             OutlinedTextField(
                 value = searchText,
@@ -229,7 +342,74 @@ fun MyAvatarApp() {
                 )
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(14.dp))
+
+            /*
+             * Accesso alla foto personale.
+             */
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        showPhotoScreen = true
+                    },
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MyAvatarLightLilac
+                )
+            ) {
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+
+                    if (personalPhoto != null) {
+
+                        Image(
+                            bitmap = personalPhoto!!.asImageBitmap(),
+                            contentDescription = "La tua foto",
+                            modifier = Modifier
+                                .size(64.dp)
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+
+                    } else {
+
+                        Text(
+                            text = "📷",
+                            fontSize = 38.sp
+                        )
+                    }
+
+                    Spacer(
+                        modifier = Modifier.size(14.dp)
+                    )
+
+                    Column {
+
+                        Text(
+                            text = "Crea il tuo avatar",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MyAvatarDark
+                        )
+
+                        Text(
+                            text = if (personalPhoto != null)
+                                "Foto pronta per essere trasformata"
+                            else
+                                "Scatta o scegli una foto",
+                            color = MyAvatarDark
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             if (savedAvatar != null) {
 
@@ -246,7 +426,7 @@ fun MyAvatarApp() {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 14.dp),
+                        .padding(bottom = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
 
@@ -256,12 +436,14 @@ fun MyAvatarApp() {
                         ),
                         contentDescription = savedAvatar!!.name,
                         modifier = Modifier
-                            .size(70.dp)
+                            .size(65.dp)
                             .clip(CircleShape),
                         contentScale = ContentScale.Crop
                     )
 
-                    Spacer(modifier = Modifier.size(12.dp))
+                    Spacer(
+                        modifier = Modifier.size(12.dp)
+                    )
 
                     Text(
                         text = savedAvatar!!.name,
@@ -292,8 +474,10 @@ fun MyAvatarApp() {
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement =
+                        Arrangement.spacedBy(12.dp),
+                    verticalArrangement =
+                        Arrangement.spacedBy(12.dp)
                 ) {
 
                     items(results) { avatar ->
@@ -340,7 +524,7 @@ private fun searchOffline(
                 if (
                     avatar.keywords.any { keyword ->
                         keyword.contains(word) ||
-                                word.contains(keyword)
+                            word.contains(keyword)
                     }
                 ) {
                     score++
@@ -396,7 +580,7 @@ private fun WelcomeSection() {
 
             Text(
                 text = "Scrivi una frase intera e MyAvatar " +
-                        "troverà gli avatar più adatti.",
+                    "troverà gli avatar più adatti.",
                 textAlign = TextAlign.Center,
                 color = MyAvatarDark
             )
@@ -549,6 +733,146 @@ private fun AvatarDetail(
     }
 }
 
+@Composable
+private fun PersonalPhotoScreen(
+    photo: Bitmap?,
+    onBack: () -> Unit,
+    onCamera: () -> Unit,
+    onGallery: () -> Unit
+) {
+
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = Color.White
+    ) {
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Text(
+                text = "La tua foto",
+                fontSize = 26.sp,
+                fontWeight = FontWeight.Bold,
+                color = MyAvatarDark
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "La foto rimane sul telefono.",
+                textAlign = TextAlign.Center,
+                color = MyAvatarDark
+            )
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            if (photo != null) {
+
+                Image(
+                    bitmap = photo.asImageBitmap(),
+                    contentDescription = "Foto personale",
+                    modifier = Modifier
+                        .size(240.dp)
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+
+            } else {
+
+                Column(
+                    modifier = Modifier
+                        .size(240.dp)
+                        .clip(CircleShape),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+
+                    Text(
+                        text = "📷",
+                        fontSize = 80.sp
+                    )
+
+                    Text(
+                        text = "Nessuna foto",
+                        color = MyAvatarDark
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            Button(
+                onClick = onCamera,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(18.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MyAvatarLilac
+                )
+            ) {
+
+                Text(
+                    text = "📷 Scatta una foto",
+                    fontSize = 17.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Button(
+                onClick = onGallery,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(18.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MyAvatarDark
+                )
+            ) {
+
+                Text(
+                    text = "🖼️ Scegli dal telefono",
+                    fontSize = 17.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Text(
+                text = "La trasformazione in avatar IA " +
+                    "arriverà nel prossimo passaggio.",
+                textAlign = TextAlign.Center,
+                fontSize = 13.sp,
+                color = MyAvatarLilac
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = onBack,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.LightGray
+                )
+            ) {
+
+                Text(
+                    text = "← Torna a MyAvatar",
+                    color = MyAvatarDark
+                )
+            }
+        }
+    }
+}
+
 private fun saveAvatar(
     context: Context,
     avatarName: String
@@ -565,4 +889,42 @@ private fun saveAvatar(
             avatarName
         )
         .apply()
+}
+
+private fun savePersonalPhoto(
+    context: Context,
+    bitmap: Bitmap
+) {
+
+    val file = File(
+        context.filesDir,
+        "myavatar_personal_photo.png"
+    )
+
+    file.outputStream().use { output ->
+
+        bitmap.compress(
+            Bitmap.CompressFormat.PNG,
+            100,
+            output
+        )
+    }
+}
+
+private fun loadPersonalPhoto(
+    context: Context
+): Bitmap? {
+
+    val file = File(
+        context.filesDir,
+        "myavatar_personal_photo.png"
+    )
+
+    return if (file.exists()) {
+        BitmapFactory.decodeFile(
+            file.absolutePath
+        )
+    } else {
+        null
+    }
 }

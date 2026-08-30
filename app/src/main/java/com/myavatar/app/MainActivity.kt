@@ -1,9 +1,10 @@
 package com.myavatar.app
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -34,11 +35,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.painterResource
 
 class MainActivity : ComponentActivity() {
 
@@ -57,77 +62,74 @@ private val MyAvatarDark = Color(0xFF30263A)
 
 data class OfflineAvatar(
     val name: String,
-    val icon: String,
+    val imageRes: Int,
     val keywords: List<String>
 )
 
 private val offlineAvatars = listOf(
 
     OfflineAvatar(
-        "Gatto spaziale", "🐱",
-        listOf("gatto", "gatti", "spazio", "astronauta", "stelle", "universo", "viola", "blu")
+        "Gatto spaziale",
+        R.drawable.avatar_gatto_spaziale,
+        listOf(
+            "gatto", "gatti", "spazio", "astronauta",
+            "stelle", "universo", "viola", "blu"
+        )
     ),
 
     OfflineAvatar(
-        "Volpe fantasy", "🦊",
-        listOf("volpe", "fantasy", "magia", "magico", "foresta", "natura", "arancione", "viola")
+        "Volpe fantasy",
+        R.drawable.avatar_volpe_fantasy,
+        listOf(
+            "volpe", "fantasy", "magia", "magico",
+            "foresta", "natura", "arancione", "viola"
+        )
     ),
 
     OfflineAvatar(
-        "Panda kawaii", "🐼",
-        listOf("panda", "kawaii", "carino", "dolce", "bianco", "nero", "tenero")
+        "Panda kawaii",
+        R.drawable.avatar_panda_kawaii,
+        listOf(
+            "panda", "kawaii", "carino", "dolce",
+            "bianco", "nero", "tenero"
+        )
     ),
 
     OfflineAvatar(
-        "Unicorno", "🦄",
-        listOf("unicorno", "fantasy", "arcobaleno", "magia", "rosa", "viola", "azzurro")
+        "Unicorno",
+        R.drawable.avatar_unicorno,
+        listOf(
+            "unicorno", "fantasy", "arcobaleno",
+            "magia", "rosa", "viola", "azzurro"
+        )
     ),
 
     OfflineAvatar(
-        "Robot futuristico", "🤖",
-        listOf("robot", "futuro", "futuristico", "tecnologia", "spazio", "gaming", "blu", "metallo")
+        "Robot futuristico",
+        R.drawable.avatar_robot_futuristico,
+        listOf(
+            "robot", "futuro", "futuristico",
+            "tecnologia", "spazio", "gaming",
+            "blu", "metallo"
+        )
     ),
 
     OfflineAvatar(
-        "Esploratrice dello spazio", "🚀",
-        listOf("spazio", "astronauta", "esploratrice", "stelle", "pianeta", "universo", "razzo")
-    ),
-
-    OfflineAvatar(
-        "Cucciolo", "🐶",
-        listOf("cane", "cani", "cucciolo", "animale", "carino", "dolce", "tenero")
-    ),
-
-    OfflineAvatar(
-        "Volpe stellare", "🦊",
-        listOf("volpe", "stelle", "spazio", "galassia", "viola", "blu")
-    ),
-
-    OfflineAvatar(
-        "Gatto musicale", "🎧",
-        listOf("gatto", "musica", "cuffie", "canzone", "music", "viola", "rosa")
-    ),
-
-    OfflineAvatar(
-        "Avatar sportivo", "🏀",
-        listOf("sport", "basket", "calcio", "pallone", "sportivo", "energia")
-    ),
-
-    OfflineAvatar(
-        "Avatar musicale", "🎵",
-        listOf("musica", "canzone", "cantante", "note", "cuffie", "rosa", "viola")
-    ),
-
-    OfflineAvatar(
-        "Natura incantata", "🌸",
-        listOf("natura", "fiori", "fiore", "foresta", "giardino", "primavera", "rosa", "verde")
+        "Esploratrice dello spazio",
+        R.drawable.avatar_esploratrice_spazio,
+        listOf(
+            "spazio", "astronauta", "esploratrice",
+            "stelle", "pianeta", "universo", "razzo"
+        )
     )
 )
 
 @Composable
 fun MyAvatarApp() {
 
-    var searchText by remember { mutableStateOf("") }
+    var searchText by remember {
+        mutableStateOf("")
+    }
 
     var results by remember {
         mutableStateOf<List<OfflineAvatar>>(emptyList())
@@ -137,11 +139,22 @@ fun MyAvatarApp() {
         mutableStateOf<OfflineAvatar?>(null)
     }
 
+    var savedAvatar by remember {
+        mutableStateOf<OfflineAvatar?>(null)
+    }
+
+    val context = LocalContext.current
+
     if (selectedAvatar != null) {
 
         AvatarDetail(
             avatar = selectedAvatar!!,
             onBack = {
+                selectedAvatar = null
+            },
+            onUseAvatar = {
+                saveAvatar(context, selectedAvatar!!.name)
+                savedAvatar = selectedAvatar
                 selectedAvatar = null
             }
         )
@@ -190,7 +203,9 @@ fun MyAvatarApp() {
                     Text("Cosa stai cercando?")
                 },
                 placeholder = {
-                    Text("Es. un gatto viola nello spazio...")
+                    Text(
+                        "Es. un gatto viola nello spazio..."
+                    )
                 }
             )
 
@@ -215,6 +230,46 @@ fun MyAvatarApp() {
             }
 
             Spacer(modifier = Modifier.height(18.dp))
+
+            if (savedAvatar != null) {
+
+                Text(
+                    text = "⭐ Il mio avatar",
+                    modifier = Modifier.fillMaxWidth(),
+                    fontSize = 19.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MyAvatarDark
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+
+                    Image(
+                        painter = painterResource(
+                            id = savedAvatar!!.imageRes
+                        ),
+                        contentDescription = savedAvatar!!.name,
+                        modifier = Modifier
+                            .size(70.dp)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+
+                    Spacer(modifier = Modifier.size(12.dp))
+
+                    Text(
+                        text = savedAvatar!!.name,
+                        fontWeight = FontWeight.Bold,
+                        color = MyAvatarDark
+                    )
+                }
+            }
 
             if (results.isEmpty()) {
 
@@ -272,7 +327,7 @@ private fun searchOffline(
         }
 
     if (words.isEmpty()) {
-        return offlineAvatars.take(8)
+        return offlineAvatars
     }
 
     val matches = offlineAvatars
@@ -282,8 +337,10 @@ private fun searchOffline(
 
             for (word in words) {
 
-                if (avatar.keywords.any { keyword ->
-                        keyword.contains(word) || word.contains(keyword)
+                if (
+                    avatar.keywords.any { keyword ->
+                        keyword.contains(word) ||
+                                word.contains(keyword)
                     }
                 ) {
                     score++
@@ -298,15 +355,13 @@ private fun searchOffline(
         .sortedByDescending {
             it.second
         }
-        .take(8)
+        .take(6)
         .map {
             it.first
         }
 
-    // Se la frase è generica o non contiene parole conosciute,
-    // mostriamo comunque avatar consigliati.
     return if (matches.isEmpty()) {
-        offlineAvatars.take(8)
+        offlineAvatars
     } else {
         matches
     }
@@ -340,46 +395,13 @@ private fun WelcomeSection() {
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Puoi scrivere una frase intera. " +
-                        "MyAvatar cercherà gli avatar più adatti " +
-                        "nel catalogo sicuro offline.",
+                text = "Scrivi una frase intera e MyAvatar " +
+                        "troverà gli avatar più adatti.",
                 textAlign = TextAlign.Center,
                 color = MyAvatarDark
             )
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(18.dp)
-            ) {
-                Text("🐱", fontSize = 28.sp)
-                Text("🦊", fontSize = 28.sp)
-                Text("🦄", fontSize = 28.sp)
-                Text("🤖", fontSize = 28.sp)
-                Text("🌸", fontSize = 28.sp)
-            }
         }
     }
-
-    Spacer(modifier = Modifier.height(18.dp))
-
-    Text(
-        text = "Prova a scrivere, ad esempio:",
-        fontWeight = FontWeight.Bold,
-        fontSize = 17.sp,
-        color = MyAvatarDark
-    )
-
-    Spacer(modifier = Modifier.height(8.dp))
-
-    Text(
-        text = "\"un gatto nello spazio\"\n" +
-                "\"una volpe magica viola\"\n" +
-                "\"un panda molto carino\"\n" +
-                "\"una bella foto per il mio profilo\"",
-        textAlign = TextAlign.Center,
-        color = MyAvatarDark
-    )
 }
 
 @Composable
@@ -403,26 +425,20 @@ private fun AvatarCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
+                .padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            Column(
+            Image(
+                painter = painterResource(
+                    id = avatar.imageRes
+                ),
+                contentDescription = avatar.name,
                 modifier = Modifier
-                    .size(105.dp)
-                    .background(
-                        color = Color.White,
-                        shape = CircleShape
-                    ),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-
-                Text(
-                    text = avatar.icon,
-                    fontSize = 52.sp
-                )
-            }
+                    .size(145.dp)
+                    .clip(CircleShape),
+                contentScale = ContentScale.Crop
+            )
 
             Spacer(modifier = Modifier.height(10.dp))
 
@@ -447,7 +463,8 @@ private fun AvatarCard(
 @Composable
 private fun AvatarDetail(
     avatar: OfflineAvatar,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onUseAvatar: () -> Unit
 ) {
 
     Surface(
@@ -473,22 +490,16 @@ private fun AvatarDetail(
 
             Spacer(modifier = Modifier.height(30.dp))
 
-            Column(
+            Image(
+                painter = painterResource(
+                    id = avatar.imageRes
+                ),
+                contentDescription = avatar.name,
                 modifier = Modifier
-                    .size(220.dp)
-                    .background(
-                        color = MyAvatarLightLilac,
-                        shape = CircleShape
-                    ),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-
-                Text(
-                    text = avatar.icon,
-                    fontSize = 110.sp
-                )
-            }
+                    .size(250.dp)
+                    .clip(CircleShape),
+                contentScale = ContentScale.Crop
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -499,22 +510,10 @@ private fun AvatarDetail(
                 color = MyAvatarDark
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Text(
-                text = "Questo avatar è disponibile " +
-                        "nel catalogo offline di MyAvatar.",
-                textAlign = TextAlign.Center,
-                color = MyAvatarDark
-            )
-
             Spacer(modifier = Modifier.height(28.dp))
 
             Button(
-                onClick = {
-                    // Il salvataggio nei "Miei avatar"
-                    // verrà aggiunto nel prossimo blocco.
-                },
+                onClick = onUseAvatar,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
@@ -548,4 +547,22 @@ private fun AvatarDetail(
             }
         }
     }
+}
+
+private fun saveAvatar(
+    context: Context,
+    avatarName: String
+) {
+
+    context
+        .getSharedPreferences(
+            "myavatar_preferences",
+            Context.MODE_PRIVATE
+        )
+        .edit()
+        .putString(
+            "saved_avatar",
+            avatarName
+        )
+        .apply()
 }

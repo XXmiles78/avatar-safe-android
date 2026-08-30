@@ -386,10 +386,14 @@ var onlineResults by remember {
 
             Button(
                 onClick = {
-                    searchOnline(searchText) { urls ->
-    onlineResults = urls
-}
-                },
+                   results = searchOffline(searchText)
+
+        onlineResults = emptyList()
+
+        searchOnline(searchText) { urls ->
+            onlineResults = urls
+        }
+    },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),

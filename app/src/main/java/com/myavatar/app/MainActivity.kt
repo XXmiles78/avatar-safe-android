@@ -101,19 +101,45 @@ private fun searchOnline(
             val responseCode = connection.responseCode
 
             if (responseCode in 200..299) {
+
                 val responseText =
                     connection.inputStream.bufferedReader().use { it.readText() }
 
                 val json = JSONObject(responseText)
-                val imageUrls = json.optJSONArray("images")
-    ?.let { array ->
-        List(array.length()) { index -> array.getString(index) }
-    } ?: emptyList()
+                val imagesArray = json.optJSONArray("images")
+
+                val imageUrls = mutableListOf<String>()
+
+                if (imagesArray != null) {
+                    for (index in 0 until imagesArray.length()) {
+
+                        val item = imagesArray.opt(index)
+
+                        when (item) {
+
+                            is String -> {
+                                if (item.isNotBlank()) {
+                                    imageUrls.add(item)
+                                }
+                            }
+
+                            is JSONObject -> {
+                                val imageUrl = item.optString("url", "")
+
+                                if (imageUrl.isNotBlank()) {
+                                    imageUrls.add(imageUrl)
+                                }
+                            }
+                        }
+                    }
+                }
 
                 Handler(Looper.getMainLooper()).post {
-    onResult(imageUrls)
-}
+                    onResult(imageUrls)
+                }
+
             } else {
+
                 Handler(Looper.getMainLooper()).post {
                     onResult(emptyList())
                 }
@@ -122,8 +148,13 @@ private fun searchOnline(
             connection.disconnect()
 
         } catch (e: Exception) {
+
             Handler(Looper.getMainLooper()).post {
                 onResult(emptyList())
+            }
+        }
+    }.start()
+}
             }
         }
     }.start()

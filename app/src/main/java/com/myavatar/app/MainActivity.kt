@@ -188,6 +188,9 @@ fun MyAvatarApp() {
 var onlineResults by remember {
     mutableStateOf<List<String>>(emptyList())
 }
+var selectedOnlineImage by remember {
+    mutableStateOf<String?>(null)
+}
     var selectedAvatar by remember {
         mutableStateOf<OfflineAvatar?>(null)
     }
@@ -290,23 +293,33 @@ var onlineResults by remember {
     /*
      * Schermata foto personale.
      */
-    if (showPhotoScreen) {
+ if (selectedOnlineImage != null) {
+    OnlineImageScreen(
+        imageUrl = selectedOnlineImage!!,
+        onBack = {
+            selectedOnlineImage = null
+        }
+    )
 
-        PersonalPhotoScreen(
-            photo = personalPhoto,
-            onBack = {
-                showPhotoScreen = false
-            },
-            onCamera = {
-                openCamera()
-            },
-            onGallery = {
-                galleryLauncher.launch("image/*")
-            }
-        )
+    return
+}
 
-        return
-    }
+if (showPhotoScreen) {
+    PersonalPhotoScreen(
+        photo = personalPhoto,
+        onBack = {
+            showPhotoScreen = false
+        },
+        onCamera = {
+            openCamera()
+        },
+        onGallery = {
+            galleryLauncher.launch("image/*")
+        }
+    )
+
+    return
+}
 
     /*
      * Schermata dettaglio avatar.
@@ -558,9 +571,12 @@ var onlineResults by remember {
 
                                 items(onlineResults) { imageUrl ->
 
-                OnlineAvatarCard(
-                    imageUrl = imageUrl
-                )
+               OnlineAvatarCard(
+    imageUrl = imageUrl,
+    onClick = {
+        selectedOnlineImage = imageUrl
+    }
+)
             }
                 }
             }
@@ -718,25 +734,19 @@ private fun AvatarCard(
 }
 @Composable
 private fun OnlineAvatarCard(
-    imageUrl: String
+    imageUrl: String,
+    onClick: () -> Unit
 ) {
-    val context = LocalContext.current
-
     Card(
-    modifier = Modifier
-        .fillMaxWidth()
-        .clickable {
-            context.startActivity(
-                android.content.Intent(
-                    android.content.Intent.ACTION_VIEW,
-                    android.net.Uri.parse(imageUrl)
-                )
-            )
-        },
-    shape = RoundedCornerShape(20.dp),
-    colors = CardDefaults.cardColors(
-        containerColor = MyAvatarLightLilac
-    )
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable {
+                onClick()
+            },
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MyAvatarLightLilac
+        )
     ) {
         Column(
             modifier = Modifier
@@ -746,9 +756,6 @@ private fun OnlineAvatarCard(
         ) {
             AsyncImage(
                 model = imageUrl,
-    onError = { error ->
-        android.util.Log.e("ONLINE_AVATAR", "Errore immagine: ${error.result.throwable}")
-    },
                 contentDescription = "Avatar online",
                 modifier = Modifier
                     .size(145.dp)
@@ -1057,5 +1064,46 @@ private fun loadPersonalPhoto(
         )
     } else {
         null
+    }
+}
+
+@Composable
+private fun OnlineImageScreen(
+    imageUrl: String,
+    onBack: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+
+        Text(
+            text = "Avatar online",
+            fontWeight = FontWeight.Bold,
+            fontSize = 22.sp,
+            color = MyAvatarDark,
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        AsyncImage(
+            model = imageUrl,
+            contentDescription = "Avatar online",
+            modifier = Modifier
+                .size(280.dp)
+                .clip(RoundedCornerShape(20.dp)),
+            contentScale = ContentScale.Fit
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Button(
+            onClick = onBack
+        ) {
+            Text("Indietro")
+        }
     }
 }

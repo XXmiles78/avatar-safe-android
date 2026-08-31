@@ -155,10 +155,7 @@ private fun searchOnline(
         }
     }.start()
 }
-            }
-        }
-    }.start()
-}
+ 
 data class OfflineAvatar(
     val name: String,
     val imageRes: Int,
